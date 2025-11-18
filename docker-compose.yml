@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  trading-system:
+    build: .
+    ports:
+      - "8501:8501"  # Dashboard accessible at http://localhost:8501
+    environment:
+      - FORCE_SIM=1
+      - SYMBOL=SPY
+      - BEAT_SEC=14
+      - ALT_BEAT_SEC=37
+    volumes:
+      - ./runtime:/app/runtime  # Persist runtime data
+    restart: unless-stopped

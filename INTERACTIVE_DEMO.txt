@@ -1,0 +1,272 @@
+
+╔══════════════════════════════════════════════════════════════════════╗
+║          INTERACTIVE CONTROL PANEL - VISUAL DEMO                     ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+When you run `python run_demo.py`, you'll see:
+
+┌──────────────────────────────────────────────────────────────────────┐
+│ $ python run_demo.py                                                 │
+│                                                                      │
+│ ===================================================================  │
+│   TRIGGERTRADES INTERACTIVE CONTROL PANEL                            │
+│ ===================================================================  │
+│                                                                      │
+│ Commands:                                                            │
+│   [R] Reset     → Zero out positions and reset trading state         │
+│   [P] Pause     → Pause trading (stop generating signals)            │
+│   [C] Continue  → Resume trading                                     │
+│   [S] Status    → Show current status                                │
+│   [M] Mode      → Switch between SIM/LIVE                            │
+│   [Q] Quit      → Exit the system                                    │
+│ ===================================================================  │
+│                                                                      │
+│ [HEARTBEAT] last_price=475.50                                        │
+│ [STATUS] Position: 0 PnL: 0.00                                       │
+│                                                                      │
+│ > Enter command: _                                                   │
+└──────────────────────────────────────────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════
+SCENARIO 1: CHECK STATUS DURING TRADING
+═══════════════════════════════════════════════════════════════════════
+
+> Enter command: S
+
+======================================================================
+  CURRENT STATUS
+======================================================================
+Phase:        T3_WINDOW
+Mode:         SIM
+Last Price:   $475.50
+Base Price:   $475.20
+Cycles:       2
+
+Position:     +1000 shares
+Daily PnL:    +$125.50
+Trading:      ACTIVE
+======================================================================
+
+> Enter command: _
+
+
+═══════════════════════════════════════════════════════════════════════
+SCENARIO 2: PAUSE TRADING BEFORE MAJOR NEWS
+═══════════════════════════════════════════════════════════════════════
+
+> Enter command: P
+
+[CMD] PAUSING trading...
+[CMD] ✓ Trading paused. No new signals will be generated.
+[CMD]   (Existing positions remain open)
+
+> Enter command: _
+
+[HEARTBEAT] last_price=476.00    ← Prices still updating
+[STATUS] Position: +1000 PnL: +$625.50    ← Position still open
+                                           ← No new signals!
+
+# After news settles...
+
+> Enter command: C
+
+[CMD] RESUMING trading...
+[CMD] ✓ Trading resumed. Looking for signals...
+
+> Enter command: _
+
+
+═══════════════════════════════════════════════════════════════════════
+SCENARIO 3: RESET AFTER PROFITABLE RUN
+═══════════════════════════════════════════════════════════════════════
+
+> Enter command: S
+
+Position:     +5000 shares
+Daily PnL:    +$2,500.00    ← Great profit!
+
+> Enter command: R
+
+[CMD] Triggering RESET (zero out & restart)...
+[CMD] ✓ Reset request submitted. Watch logs for confirmation.
+
+> Enter command: _
+
+[RESET-WATCHER] Reset request detected!
+[FLATTEN] Closing position: SELL 5000 @ ~477.50
+[FLATTEN] Flatten order queued: SELL 5000
+[OMS-SIM] SELL 5000 @ 477.50 (reason: FLATTEN)
+[EXEC] SELL 5000 @ 477.50
+[RISK] Daily PnL reset to 0.0
+[RESET] State reset to IDLE, daily PnL cleared.
+[RESET-WATCHER] Zero-out and reset complete. Ready to trade fresh.
+
+> Enter command: S
+
+Phase:        IDLE
+Position:     0 shares         ← Flattened!
+Daily PnL:    $0.00           ← Reset!
+Trading:      ACTIVE          ← Ready for new trades!
+
+
+═══════════════════════════════════════════════════════════════════════
+SCENARIO 4: SWITCH FROM SIM TO LIVE
+═══════════════════════════════════════════════════════════════════════
+
+> Enter command: S
+
+Mode:         SIM    ← Currently in simulation
+
+> Enter command: M
+
+[CMD] Current mode: SIM
+Switch to (sim/live): live    ← Type 'live'
+
+[CMD] Switching to LIVE...
+[CMD] ✓ Mode switch requested.
+
+[MODE] Switching from sim to live
+[MODE] Using LIVE feed
+
+> Enter command: S
+
+Mode:         LIVE    ← Now trading live!
+
+
+═══════════════════════════════════════════════════════════════════════
+SCENARIO 5: SAFE EXIT WITH POSITION CLOSURE
+═══════════════════════════════════════════════════════════════════════
+
+> Enter command: S
+
+Position:     +3000 shares    ← Open position
+
+> Enter command: Q
+
+[CMD] Shutting down system...
+[CMD] Flattening positions before exit...
+[FLATTEN] Closing position: SELL 3000 @ ~476.00
+[OMS-SIM] SELL 3000 @ 476.00 (reason: FLATTEN)
+[EXEC] SELL 3000 @ 476.00
+[CMD] ✓ Goodbye!
+
+$ _    ← Back to shell, positions closed safely
+
+
+═══════════════════════════════════════════════════════════════════════
+PARALLEL OPERATION: COMMANDS DON'T BLOCK TRADING
+═══════════════════════════════════════════════════════════════════════
+
+Terminal Output (Everything happens simultaneously):
+
+> Enter command: _                          ← Waiting for input
+
+[HEARTBEAT] last_price=475.50               ← Prices updating
+[SIGNAL] T1 BUY 10 base=475.20 last=475.50  ← Signals firing
+[OMS-SIM] BUY 10 @ 475.50 (reason: T1)      ← Orders executing
+[EXEC] BUY 10 @ 475.50                      ← Fills coming in
+[STATUS] Position: +10 PnL: +0.00           ← Status updating
+
+> Enter command: S    ← You type 'S' anytime
+
+Phase:        T2_WINDOW    ← Instant response
+Position:     +10 shares
+
+[HEARTBEAT] last_price=475.60    ← System continues running
+[SIGNAL] T2 BUY 10 base=475.20...
+
+> Enter command: _    ← Ready for next command
+
+
+═══════════════════════════════════════════════════════════════════════
+QUICK COMMAND REFERENCE
+═══════════════════════════════════════════════════════════════════════
+
+╔═══════╦═══════════════════════════════════════════════════════════╗
+║ Key   ║ Action                                                    ║
+╠═══════╬═══════════════════════════════════════════════════════════╣
+║   R   ║ Zero out positions, reset state, restart trading          ║
+║   P   ║ Pause new signals (keep positions open)                   ║
+║   C   ║ Continue/resume trading                                   ║
+║   S   ║ Show status (phase, position, PnL)                        ║
+║   M   ║ Switch mode (SIM ↔ LIVE)                                  ║
+║   Q   ║ Quit safely (flatten first)                               ║
+╚═══════╩═══════════════════════════════════════════════════════════╝
+
+
+═══════════════════════════════════════════════════════════════════════
+COMBINING WITH OTHER TOOLS
+═══════════════════════════════════════════════════════════════════════
+
+Terminal 1 (run_demo.py):              Terminal 2 (status_monitor.py):
+┌───────────────────────────────┐    ┌────────────────────────────────┐
+│ [STATUS] Position: +1000      │    │ ╔══════════════════════════╗  │
+│ [HEARTBEAT] last_price=475.50 │    │ ║ LIVE STATUS MONITOR      ║  │
+│                               │    │ ╚══════════════════════════╝  │
+│ > Enter command: R            │    │                               │
+│                               │    │ Strategy Phase:  T3_WINDOW    │
+│ [RESET] Triggered...          │    │ Last Price:      $475.50      │
+│                               │    │ Position:        +1000 shares │
+└───────────────────────────────┘    │ Realized P&L:    +$125.50     │
+                                     │                               │
+Terminal 3 (logs):                   │ Refreshing... [14:23:15]      │
+┌───────────────────────────────┐    └────────────────────────────────┘
+│ tail -f runtime/trades.jsonl  │    
+│                               │    Terminal 4 (analysis):
+│ {"ts":1700234595.5,           │    ┌────────────────────────────────┐
+│  "side":"SELL",               │    │ $ cat runtime/state.json | jq │
+│  "qty":1000,                  │    │ {                              │
+│  "price":475.50,              │    │   "phase": "IDLE",             │
+│  "symbol":"DIA",              │    │   "last_price": 475.50,        │
+│  "reason":"FLATTEN"}          │    │   "position": 0                │
+│                               │    │ }                              │
+└───────────────────────────────┘    └────────────────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════
+TIPS & TRICKS
+═══════════════════════════════════════════════════════════════════════
+
+💡 Quick Status Checks
+   Type 'S' frequently to monitor your progress
+
+💡 Pre-News Pause
+   Type 'P' before major economic releases
+
+💡 Profit Lock-In
+   Type 'R' after hitting your profit target
+
+💡 Safe Testing
+   Start in SIM, test with 'R', 'P', 'C', then 'M' to LIVE
+
+💡 Clean Exit
+   Always use 'Q' instead of Ctrl+C to close positions first
+
+💡 Command History
+   Just press Enter for a blank line to clear prompt
+
+💡 Background Status
+   Run status_monitor.py in separate terminal for passive monitoring
+
+
+═══════════════════════════════════════════════════════════════════════
+TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════════════
+
+Q: Commands not responding?
+A: Check if ENABLE_INTERACTIVE=true in .env
+
+Q: Can't see typed commands?
+A: Terminal echo might be off. Commands still work, just invisible.
+
+Q: Want to run without interactive mode?
+A: Set ENABLE_INTERACTIVE=false, use scripts instead
+
+Q: Accidentally pressed Ctrl+C?
+A: Restart and use 'Q' next time for safe exit
+
+
+═══════════════════════════════════════════════════════════════════════
+
+See INTERACTIVE_GUIDE.md for complete documentation!

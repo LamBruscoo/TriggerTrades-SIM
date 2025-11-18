@@ -14,10 +14,14 @@ import plotly.graph_objects as go
 os.chdir(pathlib.Path(__file__).parent)
 
 # Create runtime directory if it doesn't exist
-pathlib.Path("runtime").mkdir(exist_ok=True)
+RUNTIME_DIR = pathlib.Path("runtime")
+RUNTIME_DIR.mkdir(exist_ok=True)
 
 # Force simulator mode for cloud deployment
 os.environ["FORCE_SIM"] = "1"
+
+# Initialize mode.txt immediately so dashboard shows correct mode
+(RUNTIME_DIR / "mode.txt").write_text("sim")
 
 # Start the trading engine in a background thread
 def start_engine():

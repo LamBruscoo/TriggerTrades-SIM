@@ -56,6 +56,29 @@ if (RUNTIME_DIR / "mode.txt").exists():
 mode_badge = f"🟢 LIVE" if mode_text.lower()=="live" else ("🟠 SIM" if mode_text.lower()=="sim" else "⚪ UNKNOWN")
 st.title(f"📈 DIA Strategy Monitor {mode_badge}")
 
+# Debug info (temporary - remove once working)
+with st.expander("🔧 Debug Info", expanded=False):
+    st.write("**Runtime Directory Contents:**")
+    if RUNTIME_DIR.exists():
+        files = list(RUNTIME_DIR.iterdir())
+        st.write(f"Files found: {len(files)}")
+        for f in files:
+            st.text(f"- {f.name} ({f.stat().st_size} bytes)")
+    else:
+        st.error("Runtime directory doesn't exist!")
+    
+    st.write("**Engine Status:**")
+    st.write(f"Engine started: {st.session_state.get('engine_started', False)}")
+    
+    if STATE_PATH.exists():
+        try:
+            state_data = json.loads(STATE_PATH.read_text())
+            st.json(state_data)
+        except Exception as e:
+            st.error(f"Can't read state.json: {e}")
+    else:
+        st.warning("state.json doesn't exist yet - engine may still be starting")
+
 # Interactive Control Panel
 st.markdown("---")
 st.subheader("🎛️ Control Panel")

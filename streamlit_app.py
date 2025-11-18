@@ -23,21 +23,31 @@ os.environ["FORCE_SIM"] = "1"
 # Initialize mode.txt immediately so dashboard shows correct mode
 (RUNTIME_DIR / "mode.txt").write_text("sim")
 
-# Start the trading engine in a background thread
-def start_engine():
-    """Start the trading engine in the background"""
-    # Use run_cloud.py which doesn't have stdin issues
-    subprocess.run([sys.executable, "run_cloud.py"])
-
-# Only start the engine once using Streamlit's session state
-if "engine_started" not in st.session_state:
+# Start the trading engine as a background process
+if "engine_process" not in st.session_state:
     st.session_state.engine_started = True
     print("🚀 Starting trading engine in background...")
-    engine_thread = threading.Thread(target=start_engine, daemon=True)
-    engine_thread.start()
+    
+    # Use Popen to start the engine without blocking
+    st.session_state.engine_process = subprocess.Popen(
+        [sys.executable, "run_cloud.py"],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        bufsize=1
+    )
+    
     # Give it a moment to initialize
-    time.sleep(5)
-    print("✅ Trading engine started successfully")
+    time.sleep(3)
+    
+    # Check if it's still running
+    if st.session_state.engine_process.poll() is None:
+        print("✅ Trading engine started successfully (PID: {})".format(st.session_state.engine_process.pid))
+    else:
+        print("⚠️ Engine process exited immediately")
+        stdout, stderr = st.session_state.engine_process.communicate(timeout=1)
+        print(f"STDOUT: {stdout}")
+        print(f"STDERR: {stderr}")
 
 # ===== DASHBOARD CODE STARTS HERE =====
 
@@ -57,7 +67,7 @@ mode_badge = f"🟢 LIVE" if mode_text.lower()=="live" else ("🟠 SIM" if mode_
 st.title(f"📈 DIA Strategy Monitor {mode_badge}")
 
 # Debug info (temporary - remove once working)
-with st.expander("🔧 Debug Info", expanded=False):
+with st.expander("🔧 Debug Info", expanded=True):
     st.write("**Runtime Directory Contents:**")
     if RUNTIME_DIR.exists():
         files = list(RUNTIME_DIR.iterdir())
@@ -67,9 +77,25 @@ with st.expander("🔧 Debug Info", expanded=False):
     else:
         st.error("Runtime directory doesn't exist!")
     
-    st.write("**Engine Status:**")
-    st.write(f"Engine started: {st.session_state.get('engine_started', False)}")
+    st.write("**Engine Process:**")
+    engine_proc = st.session_state.get('engine_process')
+    if engine_proc:
+        poll_status = engine_proc.poll()
+        if poll_status is None:
+            st.success(f"✅ Engine process running (PID: {engine_proc.pid})")
+        else:
+            st.error(f"❌ Engine process exited with code: {poll_status}")
+            # Try to get any error output
+            try:
+                stdout, stderr = engine_proc.communicate(timeout=0.1)
+                if stderr:
+                    st.code(stderr, language="text")
+            except:
+                pass
+    else:
+        st.warning("Engine process not started")
     
+    st.write("**State File:**")
     if STATE_PATH.exists():
         try:
             state_data = json.loads(STATE_PATH.read_text())

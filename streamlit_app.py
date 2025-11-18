@@ -22,7 +22,8 @@ os.environ["FORCE_SIM"] = "1"
 # Start the trading engine in a background thread
 def start_engine():
     """Start the trading engine in the background"""
-    subprocess.run([sys.executable, "run_demo.py"])
+    # Use run_cloud.py which doesn't have stdin issues
+    subprocess.run([sys.executable, "run_cloud.py"])
 
 # Only start the engine once using Streamlit's session state
 if "engine_started" not in st.session_state:
@@ -31,7 +32,7 @@ if "engine_started" not in st.session_state:
     engine_thread = threading.Thread(target=start_engine, daemon=True)
     engine_thread.start()
     # Give it a moment to initialize
-    time.sleep(3)
+    time.sleep(5)
     print("✅ Trading engine started successfully")
 
 # ===== DASHBOARD CODE STARTS HERE =====
